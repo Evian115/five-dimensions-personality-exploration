@@ -1,0 +1,1082 @@
+[
+  {
+    "id": 1,
+    "sourceId": "43c98ce8-a07a-4dc2-80f6-c1b2a2485f06",
+    "text": "我常常为各种事情担忧。",
+    "textEn": "Worry about things",
+    "domain": "N",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 2,
+    "sourceId": "d50a597f-632b-4f7b-89e6-6d85b50fd1c9",
+    "text": "我很容易交到朋友。",
+    "textEn": "Make friends easily",
+    "domain": "E",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 3,
+    "sourceId": "888dd864-7449-4e96-8d5c-7a439603ea91",
+    "text": "我有丰富而生动的想象力。",
+    "textEn": "Have a vivid imagination",
+    "domain": "O",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 4,
+    "sourceId": "ce2fbbf8-7a97-4199-bda5-117e4ecdf3b6",
+    "text": "我信任他人。",
+    "textEn": "Trust others",
+    "domain": "A",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 5,
+    "sourceId": "c7f53c3c-2e77-432f-bb71-7470b67d3aa9",
+    "text": "我能顺利完成任务。",
+    "textEn": "Complete tasks successfully",
+    "domain": "C",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 6,
+    "sourceId": "48ad12ce-470e-4339-90ac-ea8c43a0103e",
+    "text": "我很容易生气。",
+    "textEn": "Get angry easily",
+    "domain": "N",
+    "facet": 2,
+    "keyed": "+"
+  },
+  {
+    "id": 7,
+    "sourceId": "458f3957-2359-4077-ade1-34525d633063",
+    "text": "我喜欢大型聚会。",
+    "textEn": "Love large parties",
+    "domain": "E",
+    "facet": 2,
+    "keyed": "+"
+  },
+  {
+    "id": 8,
+    "sourceId": "58d571e5-d725-4cf8-a438-32c16ee28eb6",
+    "text": "我相信艺术很重要。",
+    "textEn": "Believe in the importance of art",
+    "domain": "O",
+    "facet": 2,
+    "keyed": "+"
+  },
+  {
+    "id": 9,
+    "sourceId": "0cf79e27-e702-45c2-9471-04ac96b58e0e",
+    "text": "我会为了达到自己的目的而利用他人。",
+    "textEn": "Use others for my own ends",
+    "domain": "A",
+    "facet": 2,
+    "keyed": "-"
+  },
+  {
+    "id": 10,
+    "sourceId": "cda1ca17-b599-4561-a6cd-ff9d36062d27",
+    "text": "我喜欢收拾整理。",
+    "textEn": "Like to tidy up",
+    "domain": "C",
+    "facet": 2,
+    "keyed": "+"
+  },
+  {
+    "id": 11,
+    "sourceId": "5e8550d7-b8ef-4905-950a-f81d735d39e2",
+    "text": "我常常感到忧郁。",
+    "textEn": "Often feel blue",
+    "domain": "N",
+    "facet": 3,
+    "keyed": "+"
+  },
+  {
+    "id": 12,
+    "sourceId": "8af754f2-68e9-48f3-8c5d-2e6633d4472c",
+    "text": "我会主动主持局面。",
+    "textEn": "Take charge",
+    "domain": "E",
+    "facet": 3,
+    "keyed": "+"
+  },
+  {
+    "id": 13,
+    "sourceId": "0727def6-3d18-4221-bf38-86b58f9f3eed",
+    "text": "我的情绪体验很强烈。",
+    "textEn": "Experience my emotions intensely",
+    "domain": "O",
+    "facet": 3,
+    "keyed": "+"
+  },
+  {
+    "id": 14,
+    "sourceId": "ccf3a5c8-fb50-4bd4-8e7a-22af3d657279",
+    "text": "我喜欢帮助别人。",
+    "textEn": "Love to help others",
+    "domain": "A",
+    "facet": 3,
+    "keyed": "+"
+  },
+  {
+    "id": 15,
+    "sourceId": "73d84e5d-cbf5-47f0-b8cb-4d2159a52e32",
+    "text": "我会信守承诺。",
+    "textEn": "Keep my promises",
+    "domain": "C",
+    "facet": 3,
+    "keyed": "+"
+  },
+  {
+    "id": 16,
+    "sourceId": "b2d9ef74-73f5-4ea8-b00c-7aaca15937df",
+    "text": "我觉得主动接近他人很困难。",
+    "textEn": "Find it difficult to approach others",
+    "domain": "N",
+    "facet": 4,
+    "keyed": "+"
+  },
+  {
+    "id": 17,
+    "sourceId": "48a761ef-438e-409b-ae59-ea2ce8f84414",
+    "text": "我总是很忙。",
+    "textEn": "Am always busy",
+    "domain": "E",
+    "facet": 4,
+    "keyed": "+"
+  },
+  {
+    "id": 18,
+    "sourceId": "cae55842-8957-4e3b-83b3-ceff98fb9dcf",
+    "text": "比起一成不变，我更喜欢多样的变化。",
+    "textEn": "Prefer variety to routine",
+    "domain": "O",
+    "facet": 4,
+    "keyed": "+"
+  },
+  {
+    "id": 19,
+    "sourceId": "e2028ad3-b128-4f76-be57-398bfe2aff22",
+    "text": "我喜欢与人争斗。",
+    "textEn": "Love a good fight",
+    "domain": "A",
+    "facet": 4,
+    "keyed": "-"
+  },
+  {
+    "id": 20,
+    "sourceId": "b7fc949b-02b6-4cb9-a3e2-dbb3d824b55f",
+    "text": "我工作很努力。",
+    "textEn": "Work hard",
+    "domain": "C",
+    "facet": 4,
+    "keyed": "+"
+  },
+  {
+    "id": 21,
+    "sourceId": "481efd08-c810-43b1-a952-f8ac9052f96b",
+    "text": "我有时会过度放纵自己。",
+    "textEn": "Go on binges",
+    "domain": "N",
+    "facet": 5,
+    "keyed": "+"
+  },
+  {
+    "id": 22,
+    "sourceId": "987efee2-899f-4a65-b9b5-1589ef0460d7",
+    "text": "我喜欢刺激。",
+    "textEn": "Love excitement",
+    "domain": "E",
+    "facet": 5,
+    "keyed": "+"
+  },
+  {
+    "id": 23,
+    "sourceId": "e1e804c7-4a1d-498f-8610-f95147af9d1d",
+    "text": "我喜欢阅读有挑战性的内容。",
+    "textEn": "Love to read challenging material",
+    "domain": "O",
+    "facet": 5,
+    "keyed": "+"
+  },
+  {
+    "id": 24,
+    "sourceId": "71029381-3908-4c68-91e1-e41fb45542a2",
+    "text": "我相信自己比别人更优秀。",
+    "textEn": "Believe that I am better than others",
+    "domain": "A",
+    "facet": 5,
+    "keyed": "-"
+  },
+  {
+    "id": 25,
+    "sourceId": "f6076eea-56ae-4b46-97f1-5f94a7676c96",
+    "text": "我总是做好准备。",
+    "textEn": "Am always prepared",
+    "domain": "C",
+    "facet": 5,
+    "keyed": "+"
+  },
+  {
+    "id": 26,
+    "sourceId": "2f519935-92e8-48ad-9746-4a0f8b38466a",
+    "text": "我很容易惊慌。",
+    "textEn": "Panic easily",
+    "domain": "N",
+    "facet": 6,
+    "keyed": "+"
+  },
+  {
+    "id": 27,
+    "sourceId": "899c3f66-51d0-46ea-963a-6fc36d3b3cb9",
+    "text": "我会自然地流露出喜悦。",
+    "textEn": "Radiate joy",
+    "domain": "E",
+    "facet": 6,
+    "keyed": "+"
+  },
+  {
+    "id": 28,
+    "sourceId": "79186f48-e7fa-4df4-b74b-b0627ee244e1",
+    "text": "我倾向于投票支持自由派的政治候选人。",
+    "textEn": "Tend to vote for liberal political candidates",
+    "domain": "O",
+    "facet": 6,
+    "keyed": "+"
+  },
+  {
+    "id": 29,
+    "sourceId": "fd50e1ca-d9e0-4037-a7a1-a191d4db2d96",
+    "text": "我同情无家可归的人。",
+    "textEn": "Sympathize with the homeless",
+    "domain": "A",
+    "facet": 6,
+    "keyed": "+"
+  },
+  {
+    "id": 30,
+    "sourceId": "bd9eec0a-b68b-472c-8803-7db29c308cdb",
+    "text": "我会不加思考就开始行动。",
+    "textEn": "Jump into things without thinking",
+    "domain": "C",
+    "facet": 6,
+    "keyed": "-"
+  },
+  {
+    "id": 31,
+    "sourceId": "7f92ab2c-265c-4b84-8c74-09f9bb9d41a7",
+    "text": "我担心最坏的情况会发生。",
+    "textEn": "Fear for the worst",
+    "domain": "N",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 32,
+    "sourceId": "af55f014-788c-4b6e-92c4-b2b59dc8a28d",
+    "text": "与人相处时，我感到自在。",
+    "textEn": "Feel comfortable around people",
+    "domain": "E",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 33,
+    "sourceId": "08ff6dca-02a5-4aeb-aaa4-2ecf2526f143",
+    "text": "我喜欢让想象力天马行空地驰骋。",
+    "textEn": "Enjoy wild flights of fantasy",
+    "domain": "O",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 34,
+    "sourceId": "6f66cdc0-9044-457b-b40d-501ecae15ee7",
+    "text": "我相信别人是出于善意。",
+    "textEn": "Believe that others have good intentions",
+    "domain": "A",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 35,
+    "sourceId": "f110fc66-2e9e-413c-920b-19f05e63d7ac",
+    "text": "我做事表现出色。",
+    "textEn": "Excel in what I do",
+    "domain": "C",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 36,
+    "sourceId": "7dab2a37-8635-4fc7-86b7-0abf13c183c9",
+    "text": "我很容易感到烦躁。",
+    "textEn": "Get irritated easily",
+    "domain": "N",
+    "facet": 2,
+    "keyed": "+"
+  },
+  {
+    "id": 37,
+    "sourceId": "28ab59a0-e7cd-4fce-94e3-bba2ecc023b6",
+    "text": "在聚会上，我会与许多不同的人交谈。",
+    "textEn": "Talk to a lot of different people at parties",
+    "domain": "E",
+    "facet": 2,
+    "keyed": "+"
+  },
+  {
+    "id": 38,
+    "sourceId": "b5919f2f-cded-4745-a9ce-c02703cee807",
+    "text": "我能发现别人可能注意不到的美。",
+    "textEn": "See beauty in things that others might not notice",
+    "domain": "O",
+    "facet": 2,
+    "keyed": "+"
+  },
+  {
+    "id": 39,
+    "sourceId": "5a5fa975-d024-4ac8-8845-2823f957c21b",
+    "text": "我会通过欺骗来取得优势。",
+    "textEn": "Cheat to get ahead",
+    "domain": "A",
+    "facet": 2,
+    "keyed": "-"
+  },
+  {
+    "id": 40,
+    "sourceId": "adf33f9f-45bd-43e3-af25-4c491176d97f",
+    "text": "我常常忘记把东西放回原处。",
+    "textEn": "Often forget to put things back in their proper place",
+    "domain": "C",
+    "facet": 2,
+    "keyed": "-"
+  },
+  {
+    "id": 41,
+    "sourceId": "f0a14e16-d726-47e9-a2c1-647fd3d7d52e",
+    "text": "我不喜欢自己。",
+    "textEn": "Dislike myself",
+    "domain": "N",
+    "facet": 3,
+    "keyed": "+"
+  },
+  {
+    "id": 42,
+    "sourceId": "0b38e3d3-c15c-454c-b034-f4eb7ae1580a",
+    "text": "我会尝试领导别人。",
+    "textEn": "Try to lead others",
+    "domain": "E",
+    "facet": 3,
+    "keyed": "+"
+  },
+  {
+    "id": 43,
+    "sourceId": "5631b856-ff34-4f76-a0cd-edc7104c3bfa",
+    "text": "我能感受到他人的情绪。",
+    "textEn": "Feel others' emotions",
+    "domain": "O",
+    "facet": 3,
+    "keyed": "+"
+  },
+  {
+    "id": 44,
+    "sourceId": "ada867af-4db1-4e3d-a604-2b695c1806e5",
+    "text": "我关心他人。",
+    "textEn": "Am concerned about others",
+    "domain": "A",
+    "facet": 3,
+    "keyed": "+"
+  },
+  {
+    "id": 45,
+    "sourceId": "c55e3958-00c4-4fc3-9118-47d8f31bfde1",
+    "text": "我会说实话。",
+    "textEn": "Tell the truth",
+    "domain": "C",
+    "facet": 3,
+    "keyed": "+"
+  },
+  {
+    "id": 46,
+    "sourceId": "acd8fadc-5399-4a67-b5ff-9d1ada049c01",
+    "text": "我害怕成为别人关注的焦点。",
+    "textEn": "Am afraid to draw attention to myself",
+    "domain": "N",
+    "facet": 4,
+    "keyed": "+"
+  },
+  {
+    "id": 47,
+    "sourceId": "d07b6c67-0d02-4948-a997-bb84ac234cd8",
+    "text": "我总是忙个不停。",
+    "textEn": "Am always on the go",
+    "domain": "E",
+    "facet": 4,
+    "keyed": "+"
+  },
+  {
+    "id": 48,
+    "sourceId": "33b81fd0-7e32-4cd8-a13a-d5f5f754f998",
+    "text": "我更愿意选择自己熟悉的事物。",
+    "textEn": "Prefer to stick with things that I know",
+    "domain": "O",
+    "facet": 4,
+    "keyed": "-"
+  },
+  {
+    "id": 49,
+    "sourceId": "d9a9a180-29c9-4ec5-8621-2256d411def7",
+    "text": "我会对别人大喊大叫。",
+    "textEn": "Yell at people",
+    "domain": "A",
+    "facet": 4,
+    "keyed": "-"
+  },
+  {
+    "id": 50,
+    "sourceId": "f12c3d9d-1d12-4aa6-ad2e-009cd0651cbb",
+    "text": "我做的事情会超出别人对我的要求。",
+    "textEn": "Do more than what's expected of me",
+    "domain": "C",
+    "facet": 4,
+    "keyed": "+"
+  },
+  {
+    "id": 51,
+    "sourceId": "9891b7ba-a494-4307-aafe-301d8db506c6",
+    "text": "我很少过度放纵自己。",
+    "textEn": "Rarely overindulge",
+    "domain": "N",
+    "facet": 5,
+    "keyed": "-"
+  },
+  {
+    "id": 52,
+    "sourceId": "f1675af6-88bf-4376-a946-0281e762b39c",
+    "text": "我会寻求冒险。",
+    "textEn": "Seek adventure",
+    "domain": "E",
+    "facet": 5,
+    "keyed": "+"
+  },
+  {
+    "id": 53,
+    "sourceId": "95a3f20c-f933-4d19-a2c1-a7dbdf63c562",
+    "text": "我会避开哲学讨论。",
+    "textEn": "Avoid philosophical discussions",
+    "domain": "O",
+    "facet": 5,
+    "keyed": "-"
+  },
+  {
+    "id": 54,
+    "sourceId": "7df44711-4cd4-4b05-8830-73fcc3ebdab5",
+    "text": "我对自己评价很高。",
+    "textEn": "Think highly of myself",
+    "domain": "A",
+    "facet": 5,
+    "keyed": "-"
+  },
+  {
+    "id": 55,
+    "sourceId": "9d3cb5c7-955c-43a4-b6c7-b07ed01dcbd9",
+    "text": "我会把自己的计划付诸行动。",
+    "textEn": "Carry out my plans",
+    "domain": "C",
+    "facet": 5,
+    "keyed": "+"
+  },
+  {
+    "id": 56,
+    "sourceId": "13c58810-3864-42ba-aa87-d4166f858756",
+    "text": "遇到事情时，我会感到不堪重负。",
+    "textEn": "Become overwhelmed by events",
+    "domain": "N",
+    "facet": 6,
+    "keyed": "+"
+  },
+  {
+    "id": 57,
+    "sourceId": "961376e0-16a1-4c14-b059-789e63d11b63",
+    "text": "我有很多开心的时刻。",
+    "textEn": "Have a lot of fun",
+    "domain": "E",
+    "facet": 6,
+    "keyed": "+"
+  },
+  {
+    "id": 58,
+    "sourceId": "f08e1b27-3673-4898-9cae-896482d0d9f9",
+    "text": "我相信对与错并非绝对。",
+    "textEn": "Believe that there is no absolute right and wrong",
+    "domain": "O",
+    "facet": 6,
+    "keyed": "+"
+  },
+  {
+    "id": 59,
+    "sourceId": "c2038c12-7a37-47a8-9983-831bd6692aab",
+    "text": "我同情处境比自己更艰难的人。",
+    "textEn": "Feel sympathy for those who are worse off than myself",
+    "domain": "A",
+    "facet": 6,
+    "keyed": "+"
+  },
+  {
+    "id": 60,
+    "sourceId": "956f3e17-ff17-4af5-a52f-9222b8968106",
+    "text": "我会草率地作出决定。",
+    "textEn": "Make rash decisions",
+    "domain": "C",
+    "facet": 6,
+    "keyed": "-"
+  },
+  {
+    "id": 61,
+    "sourceId": "4d81238b-5407-47d4-88e5-dc0e38aa14f5",
+    "text": "我对许多事情感到害怕。",
+    "textEn": "Am afraid of many things",
+    "domain": "N",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 62,
+    "sourceId": "9f9166f0-fa94-4c14-a91d-3eecd8395794",
+    "text": "我会避免与他人接触。",
+    "textEn": "Avoid contacts with others",
+    "domain": "E",
+    "facet": 1,
+    "keyed": "-"
+  },
+  {
+    "id": 63,
+    "sourceId": "23a1034f-fab7-4887-a66e-5ef4eaafb25e",
+    "text": "我喜欢做白日梦。",
+    "textEn": "Love to daydream",
+    "domain": "O",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 64,
+    "sourceId": "c63e6121-c3ed-40cc-abc2-c1e6ea1e0858",
+    "text": "我相信别人说的话。",
+    "textEn": "Trust what people say",
+    "domain": "A",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 65,
+    "sourceId": "02ee1930-36a7-4caa-b10c-c93efb682a44",
+    "text": "我能顺利处理各项任务。",
+    "textEn": "Handle tasks smoothly",
+    "domain": "C",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 66,
+    "sourceId": "da8e6ed1-2296-4c58-8fdb-66f2f591989b",
+    "text": "我会发脾气。",
+    "textEn": "Lose my temper",
+    "domain": "N",
+    "facet": 2,
+    "keyed": "+"
+  },
+  {
+    "id": 67,
+    "sourceId": "03c10b30-b88f-4c63-8acc-71251ca24615",
+    "text": "我更喜欢独处。",
+    "textEn": "Prefer to be alone",
+    "domain": "E",
+    "facet": 2,
+    "keyed": "-"
+  },
+  {
+    "id": 68,
+    "sourceId": "751a04bc-5adf-485a-8ea4-4308406ae85b",
+    "text": "我不喜欢诗歌。",
+    "textEn": "Do not like poetry",
+    "domain": "O",
+    "facet": 2,
+    "keyed": "-"
+  },
+  {
+    "id": 69,
+    "sourceId": "982e83c2-d34e-48da-9c71-78494ab05c85",
+    "text": "我会占别人的便宜。",
+    "textEn": "Take advantage of others",
+    "domain": "A",
+    "facet": 2,
+    "keyed": "-"
+  },
+  {
+    "id": 70,
+    "sourceId": "f4891687-0ff0-47af-a4f6-d1202c8f6676",
+    "text": "我会把自己的房间弄得很乱。",
+    "textEn": "Leave a mess in my room",
+    "domain": "C",
+    "facet": 2,
+    "keyed": "-"
+  },
+  {
+    "id": 71,
+    "sourceId": "743d8973-1de1-4485-91b4-8a5cf63e7d44",
+    "text": "我常常感到情绪低落。",
+    "textEn": "Am often down in the dumps",
+    "domain": "N",
+    "facet": 3,
+    "keyed": "+"
+  },
+  {
+    "id": 72,
+    "sourceId": "2452f034-8273-4f71-9122-a40f5ead31ba",
+    "text": "我会主动掌控事情的进展。",
+    "textEn": "Take control of things",
+    "domain": "E",
+    "facet": 3,
+    "keyed": "+"
+  },
+  {
+    "id": 73,
+    "sourceId": "2a300001-6e05-4c79-b8b5-2ccae4c3d463",
+    "text": "我很少留意自己的情绪反应。",
+    "textEn": "Rarely notice my emotional reactions",
+    "domain": "O",
+    "facet": 3,
+    "keyed": "-"
+  },
+  {
+    "id": 74,
+    "sourceId": "cd54bd76-ca9c-4030-b325-bb8d896bcb3f",
+    "text": "我对他人的感受漠不关心。",
+    "textEn": "Am indifferent to the feelings of others",
+    "domain": "A",
+    "facet": 3,
+    "keyed": "-"
+  },
+  {
+    "id": 75,
+    "sourceId": "4e6e3a34-176f-4e6e-8730-1341611f972b",
+    "text": "我会违反规则。",
+    "textEn": "Break rules",
+    "domain": "C",
+    "facet": 3,
+    "keyed": "-"
+  },
+  {
+    "id": 76,
+    "sourceId": "20062533-a33d-4c1e-9cd9-bff868015b3f",
+    "text": "只有与朋友在一起时，我才感到自在。",
+    "textEn": "Only feel comfortable with friends",
+    "domain": "N",
+    "facet": 4,
+    "keyed": "+"
+  },
+  {
+    "id": 77,
+    "sourceId": "b2a077d5-1fe0-4b06-ab63-35455e001e54",
+    "text": "我在空闲时间也会做很多事情。",
+    "textEn": "Do a lot in my spare time",
+    "domain": "E",
+    "facet": 4,
+    "keyed": "+"
+  },
+  {
+    "id": 78,
+    "sourceId": "0d2e65ab-95d9-482f-beb4-3239a3a4944a",
+    "text": "我不喜欢变化。",
+    "textEn": "Dislike changes",
+    "domain": "O",
+    "facet": 4,
+    "keyed": "-"
+  },
+  {
+    "id": 79,
+    "sourceId": "0de0f900-cede-4538-9c00-5da4f830b028",
+    "text": "我会侮辱别人。",
+    "textEn": "Insult people",
+    "domain": "A",
+    "facet": 4,
+    "keyed": "-"
+  },
+  {
+    "id": 80,
+    "sourceId": "a9c97d6b-6721-4150-8d84-64ef3082f164",
+    "text": "我做事只求勉强过关。",
+    "textEn": "Do just enough work to get by",
+    "domain": "C",
+    "facet": 4,
+    "keyed": "-"
+  },
+  {
+    "id": 81,
+    "sourceId": "9f2e7f90-0ca5-4ed0-9fe5-e060238a9b5e",
+    "text": "我很容易抵制诱惑。",
+    "textEn": "Easily resist temptations",
+    "domain": "N",
+    "facet": 5,
+    "keyed": "-"
+  },
+  {
+    "id": 82,
+    "sourceId": "7dd6cf2d-5c14-48c2-8ae5-633a7a596c71",
+    "text": "我喜欢不顾后果地行事。",
+    "textEn": "Enjoy being reckless",
+    "domain": "E",
+    "facet": 5,
+    "keyed": "+"
+  },
+  {
+    "id": 83,
+    "sourceId": "fecc35f7-681e-4889-a404-4a973a3dfef0",
+    "text": "我觉得抽象的概念很难理解。",
+    "textEn": "Have difficulty understanding abstract ideas",
+    "domain": "O",
+    "facet": 5,
+    "keyed": "-"
+  },
+  {
+    "id": 84,
+    "sourceId": "1d686958-6fe7-432f-85e6-186b99e4e232",
+    "text": "我对自己的评价很高。",
+    "textEn": "Have a high opinion of myself",
+    "domain": "A",
+    "facet": 5,
+    "keyed": "-"
+  },
+  {
+    "id": 85,
+    "sourceId": "c7db0ed8-df7d-49bf-942f-59e46ef743c4",
+    "text": "我会浪费时间。",
+    "textEn": "Waste my time",
+    "domain": "C",
+    "facet": 5,
+    "keyed": "-"
+  },
+  {
+    "id": 86,
+    "sourceId": "b7e0e393-9b21-4e0d-adf3-8f28fb5b9d87",
+    "text": "我觉得自己无力应对事情。",
+    "textEn": "Feel that I'm unable to deal with things",
+    "domain": "N",
+    "facet": 6,
+    "keyed": "+"
+  },
+  {
+    "id": 87,
+    "sourceId": "79d956e8-1118-402a-a0e2-9380af18243e",
+    "text": "我热爱生活。",
+    "textEn": "Love life",
+    "domain": "E",
+    "facet": 6,
+    "keyed": "+"
+  },
+  {
+    "id": 88,
+    "sourceId": "96ba77b2-1a44-4dfd-95f9-ae4d1f714460",
+    "text": "我倾向于投票支持保守派的政治候选人。",
+    "textEn": "Tend to vote for conservative political candidates",
+    "domain": "O",
+    "facet": 6,
+    "keyed": "-"
+  },
+  {
+    "id": 89,
+    "sourceId": "77f54ab4-0fba-4efb-8700-066c7490eb87",
+    "text": "我对他人的烦恼不感兴趣。",
+    "textEn": "Am not interested in other people's problems",
+    "domain": "A",
+    "facet": 6,
+    "keyed": "-"
+  },
+  {
+    "id": 90,
+    "sourceId": "a354cf7c-8d11-46ac-acc5-da90d2048637",
+    "text": "我做事会急于行动。",
+    "textEn": "Rush into things",
+    "domain": "C",
+    "facet": 6,
+    "keyed": "-"
+  },
+  {
+    "id": 91,
+    "sourceId": "43b03992-3f32-4ed1-a6f8-5d6d3e7ed246",
+    "text": "我很容易感到压力。",
+    "textEn": "Get stressed out easily",
+    "domain": "N",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 92,
+    "sourceId": "41702602-08e4-4e2b-9a19-291d9efc581a",
+    "text": "我会与别人保持距离。",
+    "textEn": "Keep others at a distance",
+    "domain": "E",
+    "facet": 1,
+    "keyed": "-"
+  },
+  {
+    "id": 93,
+    "sourceId": "935a7413-abac-4f54-9169-d1fbd39da752",
+    "text": "我喜欢沉浸在思绪之中。",
+    "textEn": "Like to get lost in thought",
+    "domain": "O",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 94,
+    "sourceId": "432dbde8-8756-4ff0-80d5-f47018235139",
+    "text": "我不信任别人。",
+    "textEn": "Distrust people",
+    "domain": "A",
+    "facet": 1,
+    "keyed": "-"
+  },
+  {
+    "id": 95,
+    "sourceId": "5727c93f-317b-4af1-a686-77fc9fbc5033",
+    "text": "我知道怎样把事情做好。",
+    "textEn": "Know how to get things done",
+    "domain": "C",
+    "facet": 1,
+    "keyed": "+"
+  },
+  {
+    "id": 96,
+    "sourceId": "d32bd062-4eb2-401b-99b2-e7afea39ca9b",
+    "text": "我不容易被惹恼。",
+    "textEn": "Am not easily annoyed",
+    "domain": "N",
+    "facet": 2,
+    "keyed": "-"
+  },
+  {
+    "id": 97,
+    "sourceId": "9a47184f-6046-4e68-a61b-3d9b357b86ea",
+    "text": "我会避开人群。",
+    "textEn": "Avoid crowds",
+    "domain": "E",
+    "facet": 2,
+    "keyed": "-"
+  },
+  {
+    "id": 98,
+    "sourceId": "87c5b27e-59a8-4c48-8ba8-f5413d735693",
+    "text": "我不喜欢参观美术馆。",
+    "textEn": "Do not enjoy going to art museums",
+    "domain": "O",
+    "facet": 2,
+    "keyed": "-"
+  },
+  {
+    "id": 99,
+    "sourceId": "11b20adb-abed-4363-894c-3dd823ae0540",
+    "text": "我会阻挠别人的计划。",
+    "textEn": "Obstruct others' plans",
+    "domain": "A",
+    "facet": 2,
+    "keyed": "-"
+  },
+  {
+    "id": 100,
+    "sourceId": "50418d86-712c-45d9-adc4-ea0231c93cf5",
+    "text": "我会把自己的东西随手乱放。",
+    "textEn": "Leave my belongings around",
+    "domain": "C",
+    "facet": 2,
+    "keyed": "-"
+  },
+  {
+    "id": 101,
+    "sourceId": "f40e421f-6c24-4be2-bd9f-28d33358d8c6",
+    "text": "我能自在地接纳自己。",
+    "textEn": "Feel comfortable with myself",
+    "domain": "N",
+    "facet": 3,
+    "keyed": "-"
+  },
+  {
+    "id": 102,
+    "sourceId": "8791f37b-686f-47c3-9db7-74c009951321",
+    "text": "我会等着别人带头。",
+    "textEn": "Wait for others to lead the way",
+    "domain": "E",
+    "facet": 3,
+    "keyed": "-"
+  },
+  {
+    "id": 103,
+    "sourceId": "4fd25155-9cc2-4cd6-8852-3e0ca2d5e95d",
+    "text": "我不理解那些情绪激动的人。",
+    "textEn": "Don't understand people who get emotional",
+    "domain": "O",
+    "facet": 3,
+    "keyed": "-"
+  },
+  {
+    "id": 104,
+    "sourceId": "b68af20d-24f9-4c27-85cc-fe0858994888",
+    "text": "我不会为他人抽出时间。",
+    "textEn": "Take no time for others",
+    "domain": "A",
+    "facet": 3,
+    "keyed": "-"
+  },
+  {
+    "id": 105,
+    "sourceId": "54423933-0ebb-44a7-bdd9-2a9b100c70f2",
+    "text": "我会违背承诺。",
+    "textEn": "Break my promises",
+    "domain": "C",
+    "facet": 3,
+    "keyed": "-"
+  },
+  {
+    "id": 106,
+    "sourceId": "7317848c-3e1b-422f-bb16-02efc504f677",
+    "text": "棘手的社交场合不会让我感到困扰。",
+    "textEn": "Am not bothered by difficult social situations",
+    "domain": "N",
+    "facet": 4,
+    "keyed": "-"
+  },
+  {
+    "id": 107,
+    "sourceId": "7d93e1ca-46e8-4a30-9623-42a80c9b420c",
+    "text": "我喜欢轻松悠闲地生活。",
+    "textEn": "Like to take it easy",
+    "domain": "E",
+    "facet": 4,
+    "keyed": "-"
+  },
+  {
+    "id": 108,
+    "sourceId": "a7f43928-8982-4ed5-8656-7a80346fe979",
+    "text": "我习惯沿用传统的做法。",
+    "textEn": "Am attached to conventional ways",
+    "domain": "O",
+    "facet": 4,
+    "keyed": "-"
+  },
+  {
+    "id": 109,
+    "sourceId": "17910a55-a64a-4ed0-8b46-293e2fa2fe03",
+    "text": "我会报复别人。",
+    "textEn": "Get back at others",
+    "domain": "A",
+    "facet": 4,
+    "keyed": "-"
+  },
+  {
+    "id": 110,
+    "sourceId": "3890bb43-2695-4b8d-b289-ee10d11cc884",
+    "text": "我在工作上投入的时间和精力很少。",
+    "textEn": "Put little time and effort into my work",
+    "domain": "C",
+    "facet": 4,
+    "keyed": "-"
+  },
+  {
+    "id": 111,
+    "sourceId": "49a85680-53aa-4208-86b5-dccc7a6f8e37",
+    "text": "我能控制自己的强烈欲望。",
+    "textEn": "Am able to control my cravings",
+    "domain": "N",
+    "facet": 5,
+    "keyed": "-"
+  },
+  {
+    "id": 112,
+    "sourceId": "10f90fa9-649c-4631-ac4c-3dd3f751597d",
+    "text": "我有时会表现得狂放而疯狂。",
+    "textEn": "Act wild and crazy",
+    "domain": "E",
+    "facet": 5,
+    "keyed": "+"
+  },
+  {
+    "id": 113,
+    "sourceId": "b86de003-c3c4-4cc8-9385-5ac8a0142c34",
+    "text": "我对理论讨论不感兴趣。",
+    "textEn": "Am not interested in theoretical discussions",
+    "domain": "O",
+    "facet": 5,
+    "keyed": "-"
+  },
+  {
+    "id": 114,
+    "sourceId": "80c1d149-7050-481a-9953-aefb441642e7",
+    "text": "我会吹嘘自己的优点。",
+    "textEn": "Boast about my virtues",
+    "domain": "A",
+    "facet": 5,
+    "keyed": "-"
+  },
+  {
+    "id": 115,
+    "sourceId": "51403620-968c-42fa-a772-65ba5ad8396f",
+    "text": "我很难开始着手做任务。",
+    "textEn": "Have difficulty starting tasks",
+    "domain": "C",
+    "facet": 5,
+    "keyed": "-"
+  },
+  {
+    "id": 116,
+    "sourceId": "88a3c2fe-3aa4-4f46-9322-da656332268a",
+    "text": "我在压力下仍能保持冷静。",
+    "textEn": "Remain calm under pressure",
+    "domain": "N",
+    "facet": 6,
+    "keyed": "-"
+  },
+  {
+    "id": 117,
+    "sourceId": "e7b31bdc-5f6b-40ec-ba91-f5919b0f170e",
+    "text": "我会看到生活中积极的一面。",
+    "textEn": "Look at the bright side of life",
+    "domain": "E",
+    "facet": 6,
+    "keyed": "+"
+  },
+  {
+    "id": 118,
+    "sourceId": "580b08d1-3c94-46e9-9d07-d6d80c698127",
+    "text": "我认为应该严厉打击犯罪。",
+    "textEn": "Believe that we should be tough on crime",
+    "domain": "O",
+    "facet": 6,
+    "keyed": "-"
+  },
+  {
+    "id": 119,
+    "sourceId": "48bee420-60c0-45cd-be43-3893dbc1969a",
+    "text": "我会尽量不去想那些需要帮助的人。",
+    "textEn": "Try not to think about the needy",
+    "domain": "A",
+    "facet": 6,
+    "keyed": "-"
+  },
+  {
+    "id": 120,
+    "sourceId": "ea3327ea-3529-4be4-8e2d-2174731ae4d7",
+    "text": "我会不经思考就行动。",
+    "textEn": "Act without thinking",
+    "domain": "C",
+    "facet": 6,
+    "keyed": "-"
+  }
+]

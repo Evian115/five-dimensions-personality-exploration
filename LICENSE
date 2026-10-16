@@ -22,9 +22,13 @@ SOFTWARE.
 
 ---
 
-The IPIP-50 question set bundled in src/data/questions.ts is from the
+The personality question texts underlying this project are from the
 International Personality Item Pool (https://ipip.ori.org/) and is in the
 public domain.
 
 Citation: Goldberg, L. R. (1992). The development of markers for the Big-Five
 factor structure. Psychological Assessment, 4, 26-42.
+
+The current locally selected 60-item exploratory subset is documented in
+docs/ipip60-selection.md. Third-party package licenses and attribution are
+retained in vendor/bigfive/.

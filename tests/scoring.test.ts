@@ -18,17 +18,17 @@ test('reverseScore maps 1→5, 3→3, 5→1', () => {
   assert.equal(reverseScore(5), 1);
 });
 
-test('normalizeScore maps raw 10→0, 30→50, 50→100', () => {
-  assert.equal(normalizeScore(10), 0);
-  assert.equal(normalizeScore(30), 50);
-  assert.equal(normalizeScore(50), 100);
+test('normalizeScore maps 12-item raw 12→0, 36→50, 60→100', () => {
+  assert.equal(normalizeScore(12), 0);
+  assert.equal(normalizeScore(36), 50);
+  assert.equal(normalizeScore(60), 100);
 });
 
 test('getLevel bands', () => {
   assert.equal(getLevel(0), 'low');
-  assert.equal(getLevel(35), 'low');
-  assert.equal(getLevel(36), 'medium');
-  assert.equal(getLevel(65), 'medium');
+  assert.equal(getLevel(49), 'low');
+  assert.equal(getLevel(50), 'medium');
+  assert.equal(getLevel(51), 'high');
   assert.equal(getLevel(66), 'high');
   assert.equal(getLevel(100), 'high');
 });
@@ -48,7 +48,7 @@ test('all-5 on plus items and all-1 on minus items maxes every domain', () => {
   for (const q of QUESTIONS) answers[q.id] = q.keyed === '+' ? 5 : 1;
   const scores = calculateAllScores(answers);
   for (const domain of ['E', 'A', 'C', 'N', 'O'] as const) {
-    assert.equal(scores[domain].rawScore, 50);
+    assert.equal(scores[domain].rawScore, 60);
     assert.equal(scores[domain].score, 100);
     assert.equal(scores[domain].level, 'high');
   }
@@ -57,6 +57,13 @@ test('all-5 on plus items and all-1 on minus items maxes every domain', () => {
 test('Extraversion raw score reflects reverse-keying', () => {
   const answers: Answers = {};
   for (const q of QUESTIONS) answers[q.id] = 3;
-  // E plus: 5 items × 3 = 15; E minus: 5 items × reverse(3)=3 → 15. Total 30.
-  assert.equal(calculateDomainRawScore(answers, 'E'), 30);
+  // E contains 12 items; midpoint answers sum to 36 after reverse-keying.
+  assert.equal(calculateDomainRawScore(answers, 'E'), 36);
+});
+
+
+test('historical 24-item normalization remains unchanged when count is explicit', () => {
+  assert.equal(normalizeScore(24, 24), 0);
+  assert.equal(normalizeScore(72, 24), 50);
+  assert.equal(normalizeScore(120, 24), 100);
 });
