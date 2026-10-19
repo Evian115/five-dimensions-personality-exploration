@@ -1,7 +1,10 @@
+import { DatabaseSync } from 'node:sqlite';
+import { randomUUID } from 'node:crypto';
+import { createResultStore } from '../server/store.ts';
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { randomBytes } from 'node:crypto';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { ASSESSMENT, QUESTIONS, calculateAllScores, type Answers } from '../src/index.ts';
@@ -57,5 +60,89 @@ test('encryption key persists across server restarts', () => {
     const scores = calculateAllScores(Object.fromEntries(QUESTIONS.map(q => [q.id, 3])) as Answers);
     const result = first.encrypt(scores, ASSESSMENT.id);
     assert.deepEqual(loadResultCipher(filename).decrypt(result.id).scores, scores);
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+
+test('missing key with existing encrypted records refuses startup without replacing key or changing data', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'bigfive-key-loss-'));
+  const filename = join(directory, 'test.sqlite');
+  try {
+    let store = createResultStore(filename);
+    const payload = { submissionId: randomUUID(), answers: Object.fromEntries(QUESTIONS.map(q => [q.id, 3])) };
+    const result = store.create(payload);
+    store.close();
+    const key = readFileSync(filename + '.link-key');
+    const db = new DatabaseSync(filename, { readOnly: true });
+    const snapshot = db.prepare('SELECT * FROM results').all();
+    db.close();
+    rmSync(filename + '.link-key');
+    assert.throws(() => createResultStore(filename), /已有加密结果但缺少密钥/);
+    assert.equal(existsSync(filename + '.link-key'), false);
+    const after = new DatabaseSync(filename, { readOnly: true });
+    assert.deepEqual(after.prepare('SELECT * FROM results').all(), snapshot);
+    after.close();
+    writeFileSync(filename + '.link-key', key, { mode: 0o600 });
+    store = createResultStore(filename);
+    try {
+      assert.deepEqual(store.decode(result.id), result);
+      assert.deepEqual(store.create(payload), result);
+    } finally { store.close(); }
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('empty databases can initialize a missing key on their first submission', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'bigfive-key-empty-'));
+  const filename = join(directory, 'test.sqlite');
+  try {
+    createResultStore(filename).close();
+    rmSync(filename + '.link-key');
+    const store = createResultStore(filename);
+    try { assert.equal(readFileSync(filename + '.link-key').length, 32); }
+    finally { store.close(); }
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('a different 32-byte key refuses startup without changing records, and restoring the original key recovers retries', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'bigfive-key-mismatch-'));
+  const filename = join(directory, 'test.sqlite');
+  try {
+    let store = createResultStore(filename);
+    const payload = { submissionId: randomUUID(), answers: Object.fromEntries(QUESTIONS.map(q => [q.id, 3])) };
+    const result = store.create(payload);
+    store.close();
+    const original = readFileSync(filename + '.link-key');
+    const db = new DatabaseSync(filename, { readOnly: true });
+    const before = db.prepare('SELECT * FROM results').all();
+    db.close();
+    const wrong = randomBytes(32);
+    writeFileSync(filename + '.link-key', wrong);
+    assert.throws(() => createResultStore(filename), /密钥与已有加密结果不匹配/);
+    assert.deepEqual(readFileSync(filename + '.link-key'), wrong);
+    const after = new DatabaseSync(filename, { readOnly: true });
+    assert.deepEqual(after.prepare('SELECT * FROM results').all(), before);
+    assert.equal(after.prepare('SELECT COUNT(*) n FROM submission_receipts').get()!.n, 1);
+    after.close();
+    writeFileSync(filename + '.link-key', original);
+    store = createResultStore(filename);
+    try { assert.deepEqual(store.create(payload), result); assert.deepEqual(store.decode(result.id), result); }
+    finally { store.close(); }
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('startup checks later records too, rejecting databases containing a second encryption key', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'bigfive-mixed-keys-'));
+  const filename = join(directory, 'test.sqlite');
+  try {
+    const store = createResultStore(filename);
+    const answers = Object.fromEntries(QUESTIONS.map(q => [q.id, 3])) as Answers;
+    store.create({ submissionId: randomUUID(), answers });
+    store.create({ submissionId: randomUUID(), answers });
+    store.close();
+    const different = createResultCipher(randomBytes(32)).encrypt(calculateAllScores(answers), ASSESSMENT.id);
+    const db = new DatabaseSync(filename);
+    db.prepare('UPDATE results SET result_link = ? WHERE id = 2').run(different.shareUrl);
+    db.close();
+    assert.throws(() => createResultStore(filename), /密钥与已有加密结果不匹配/);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });

@@ -8,10 +8,17 @@ services:
       PORT: "5173"
       DATABASE_PATH: /app/data/bigfive.sqlite
       BASE_URL: ${BASE_URL:-}
+      DINGTALK_APP_KEY: ${DINGTALK_APP_KEY:-}
+      DINGTALK_APP_SECRET: ${DINGTALK_APP_SECRET:-}
+      DINGTALK_BASE_ID: ${DINGTALK_BASE_ID:-}
+      DINGTALK_SHEET_ID_OR_NAME: ${DINGTALK_SHEET_ID_OR_NAME:-}
+      DINGTALK_USER_ID: ${DINGTALK_USER_ID:-}
+      DINGTALK_OPERATOR_ID: ${DINGTALK_OPERATOR_ID:-}
     volumes:
       - bigfive-data:/app/data
     restart: unless-stopped
     init: true
+    stop_grace_period: 25s
 
 volumes:
   bigfive-data:

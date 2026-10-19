@@ -1,5 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { DatabaseSync } from 'node:sqlite';
 import { RESULT_VERSIONS } from '../src/assessment-versions.ts';
 import { decodeResult, encodeResult } from '../src/result-link.ts';
 import { normalizeScore, type Scores, type Level } from '../src/scoring.ts';
@@ -18,12 +19,40 @@ export function loadResultCipher(filename: string) {
   else {
     const keyFile = `${filename}.link-key`;
     if (!existsSync(keyFile)) {
+      // Provision only new/unencrypted databases. Never replace the key of existing links.
+      if (existsSync(filename)) {
+        const existing = new DatabaseSync(filename, { readOnly: true });
+        try {
+          const columns = existing.prepare('PRAGMA table_info(results)').all();
+          const encrypted = columns.some(column => column.name === 'result_link')
+            && existing.prepare("SELECT 1 FROM results WHERE instr(result_link, '/results/view#e1_') > 0 LIMIT 1").get();
+          const receipts = existing.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'submission_receipts'").get()
+            && existing.prepare('SELECT 1 FROM submission_receipts LIMIT 1').get();
+          if (encrypted || receipts) throw new Error(`已有加密结果但缺少密钥 ${keyFile}。请从备份恢复原密钥，禁止自动生成替代密钥。`);
+        } finally { existing.close(); }
+      }
       try { writeFileSync(keyFile, randomBytes(32), { mode: 0o600, flag: 'wx' }); }
       catch (error) { if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error; }
     }
     key = readFileSync(keyFile);
   }
-  return createResultCipher(key);
+  const cipher = createResultCipher(key);
+  // Verify every existing encrypted record before opening the store for writes.
+  // Checking only one row would miss a database already containing mixed keys.
+  if (filename !== ':memory:' && existsSync(filename)) {
+    const existing = new DatabaseSync(filename, { readOnly: true });
+    try {
+      const columns = existing.prepare('PRAGMA table_info(results)').all();
+      if (columns.some(column => column.name === 'result_link')) {
+        const rows = existing.prepare("SELECT result_link FROM results WHERE instr(result_link, '/results/view#e1_') > 0");
+        for (const row of rows.iterate()) {
+          try { cipher.decrypt(new URL(String(row.result_link), 'http://localhost').hash.slice(1)); }
+          catch { throw new Error('密钥与已有加密结果不匹配，或已有链接损坏。请恢复配套的数据库与原密钥，已停止启动。'); }
+        }
+      }
+    } finally { existing.close(); }
+  }
+  return cipher;
 }
 
 export function createResultCipher(key: Buffer) {

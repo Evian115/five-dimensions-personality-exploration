@@ -1,9 +1,9 @@
 import { ASSESSMENT, QUESTIONS, isTestComplete, type Answers } from './index.ts';
 import './style.css';
 import { createSubmissionId } from './submission-id.ts';
-import { restoreDraft, saveDraft, completeDraft, draftPage } from './assessment-draft.ts';
+import { createDraftSession, draftPage, type DraftStorage } from './assessment-draft.ts';
 import { CURRENT_ASSESSMENT_ID, assessmentName, assessmentCount } from './assessment-versions.ts';
-import type { SavedResult } from './result.ts';
+import { validateSavedResult, type SavedResult } from './result.ts';
 
 const labels = ['非常不同意', '不同意', '中立', '同意', '非常同意'];
 const domains = [
@@ -17,13 +17,16 @@ const domains = [
 const app = document.querySelector<HTMLDivElement>('#app')!;
 const entryUrl = new URL(window.location.href);
 const startNew = /^\/assessment\/?$/.test(entryUrl.pathname) && entryUrl.searchParams.get('start') === '1';
-const draft = restoreDraft(localStorage, startNew);
+let storage: DraftStorage | undefined;
+try { storage = window.localStorage; } catch { /* Storage can be disabled by browser policy. */ }
+let session: ReturnType<typeof createDraftSession> | undefined;
+let draftNotice = '';
 if (startNew) {
   entryUrl.searchParams.delete('start');
   history.replaceState(null, '', entryUrl.pathname + entryUrl.search + entryUrl.hash);
 }
-let answers: Answers = draft.answers;
-let submissionId = draft.submissionId;
+let answers: Answers = {};
+let submissionId = createSubmissionId();
 let page = draftPage(answers);
 let showingResult = false;
 let savedResult: SavedResult | null = null;
@@ -34,7 +37,25 @@ let routeVersion = 0;
 let transitioning = false;
 const pageCount = QUESTIONS.length;
 
-function save() { saveDraft(localStorage, { answers, submissionId }); }
+const storageNotice = '浏览器无法保存作答进度，刷新或关闭页面会丢失尚未提交的答案。';
+function restoreSession(start = false) {
+  session = createDraftSession(storage, start);
+  answers = session.draft.answers;
+  submissionId = session.draft.submissionId;
+  page = draftPage(answers);
+}
+function save() {
+  if (!session) restoreSession();
+  if (!session!.save({ answers, submissionId })) {
+    answers = session!.draft.answers;
+    submissionId = session!.draft.submissionId;
+    page = draftPage(answers);
+    draftNotice = '其他标签页已更新作答进度，已载入最新草稿，请确认后继续。';
+    render();
+    return false;
+  }
+  return true;
+}
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
 }
@@ -49,6 +70,11 @@ function render() {
       <footer>基于公开的 ${assessmentName(savedResult?.assessmentId ?? ASSESSMENT.id)} 题库 · 仅供自我了解与教育参考，不用于临床诊断。</footer>
     </main>`;
   bind();
+  if (submitting && !showingResult) {
+    app.querySelectorAll<HTMLButtonElement | HTMLInputElement>('.panel button, .panel input').forEach(control => { control.disabled = true; });
+    const next = app.querySelector('#next');
+    if (next) next.textContent = '正在保存…';
+  }
 }
 
 function questionHtml() {
@@ -58,7 +84,7 @@ function questionHtml() {
     <p class="hint">请根据平时的真实感受，选择这些描述与你的符合程度。</p>
     <div class="question single-question"><div class="question-title"><span class="number">第 ${q.id} 题 · 必答</span><strong id="question-title" tabindex="-1">${escapeHtml(q.text)}</strong></div><div class="options" role="radiogroup" aria-labelledby="question-title" aria-required="true">${labels.map((label, i) => `<label class="option ${answers[q.id] === i + 1 ? 'selected' : ''}"><input type="radio" required name="q${q.id}" value="${i + 1}" ${answers[q.id] === i + 1 ? 'checked' : ''}><span class="option-dot"></span><span>${label}</span></label>`).join('')}</div></div>
     <div class="actions"><button id="previous" class="button secondary" ${page === 0 ? 'disabled' : ''}>← 上一题</button><span class="page-indicator">${page + 1} / ${pageCount}</span><button id="next" class="button primary">${page === pageCount - 1 ? '查看结果' : '下一题'} <span>→</span></button></div>
-    <p id="message" class="message" aria-live="polite"></p>
+    <p id="message" class="message" aria-live="polite">${escapeHtml(draftNotice || (session?.unavailable ? storageNotice : ''))}</p>
     <div class="dev-shortcut"><button id="skip-test" class="button secondary">跳过，查看随机结果 →</button></div></section>`;
 }
 
@@ -119,13 +145,14 @@ async function readJson(response: Response): Promise<SavedResult> {
   let value;
   try { value = await response.json(); }
   catch { throw new Error('服务返回的数据格式不正确，请刷新页面后重试。'); }
-  if (!response.ok) throw new Error(value.error || '操作失败，请稍后重试。');
-  return value as SavedResult;
+  if (!response.ok) throw new Error(typeof value?.error === 'string' ? value.error : '操作失败，请稍后重试。');
+  return validateSavedResult(value);
 }
 
 async function loadRoute() {
   const version = ++routeVersion;
   const match = /^\/results\/([^/]+)\/?$/.exec(window.location.pathname);
+  if (!match && !session) restoreSession(startNew);
   showingResult = Boolean(match);
   savedResult = null;
   resultError = '';
@@ -158,7 +185,7 @@ async function loadRoute() {
 }
 
 async function submitResult() {
-  if (submitting) return;
+  if (submitting || !save()) return;
   submitting = true;
   const next = document.querySelector<HTMLButtonElement>('#next')!;
   const previous = document.querySelector<HTMLButtonElement>('#previous')!;
@@ -169,37 +196,43 @@ async function submitResult() {
   next.textContent = '正在保存…';
   document.querySelector('#message')!.textContent = '';
   const submittedId = submissionId;
-  let result: SavedResult;
+  const submittedSession = session;
+  const version = routeVersion;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 30_000);
   try {
-    // Persist the request identity before sending, including for restored complete drafts.
-    save();
-    result = await readJson(await fetch('/api/results', {
+    const result = await readJson(await fetch('/api/results', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ submissionId: submittedId, answers, assessmentId: ASSESSMENT.id }),
+      signal: controller.signal,
     }));
+    // A successful write belongs to this submission, even after navigation.
+    submittedSession?.complete(submittedId);
+    if (submissionId !== submittedId) return;
+    answers = {};
+    page = 0;
+    submissionId = createSubmissionId();
+    if (version !== routeVersion) return;
+    savedResult = result;
+    draftNotice = '';
+    history.pushState(null, '', result.relativePath);
+    try {
+      await navigate(() => { showingResult = true; }, 1);
+    } catch {
+      showingResult = true;
+      render();
+    }
   } catch (error) {
-    document.querySelector('#message')!.textContent = error instanceof Error ? error.message : '保存失败，请重试。';
-    next.disabled = false;
-    previous.disabled = page === 0;
-    if (skip) skip.disabled = false;
-    document.querySelectorAll<HTMLInputElement>('input[type="radio"]').forEach(input => { input.disabled = false; });
-    next.textContent = '重新提交 →';
+    if (version === routeVersion && submissionId === submittedId) {
+      draftNotice = controller.signal.aborted
+        ? '提交等待超过 30 秒，答案已保留，请重新提交。重试不会重复记录。'
+        : error instanceof Error ? error.message : '保存失败，请重试。';
+    }
+  } finally {
+    window.clearTimeout(timeout);
     submitting = false;
-    return;
+    if (!showingResult) render();
   }
-  savedResult = result;
-  completeDraft(localStorage, submittedId);
-  answers = {};
-  page = 0;
-  submissionId = createSubmissionId();
-  history.pushState(null, '', result.relativePath);
-  try {
-    await navigate(() => { showingResult = true; }, 1);
-  } catch {
-    // A display/animation failure after a successful write must not offer another submission.
-    showingResult = true;
-    render();
-  } finally { submitting = false; }
 }
 
 function showShareDialog() {
@@ -280,11 +313,13 @@ function showResetDialog() {
     const confirmed = dialog.returnValue === 'confirm';
     dialog.remove();
     if (confirmed) {
-      answers = {};
-      submissionId = createSubmissionId();
+      if (!session) restoreSession(true);
+      const fresh = session!.restart();
+      answers = fresh.answers;
+      submissionId = fresh.submissionId;
       savedResult = null;
       history.pushState(null, '', '/assessment');
-      save();
+      draftNotice = '';
       showingResult = false;
       page = 0;
       render();
@@ -313,19 +348,20 @@ function bind() {
       answers = Object.fromEntries(QUESTIONS.map(q => [q.id, Math.floor(Math.random() * 5) + 1])) as Answers;
       submissionId = createSubmissionId();
       page = pageCount - 1;
-      save();
+      if (!save()) return;
       render();
       void submitResult();
     });
   }
   root.querySelectorAll<HTMLInputElement>('input[type="radio"]').forEach(input => input.addEventListener('change', () => {
     submissionId = createSubmissionId();
-    answers[Number(input.name.slice(1))] = Number(input.value) as 1 | 2 | 3 | 4 | 5;
-    save();
+    answers = { ...answers, [Number(input.name.slice(1))]: Number(input.value) as 1 | 2 | 3 | 4 | 5 };
+    if (!save()) return;
+    draftNotice = '';
     root.querySelectorAll('.option').forEach(option => option.classList.toggle('selected', option.contains(input)));
     const next = root.querySelector<HTMLButtonElement>('#next')!;
     next.disabled = false;
-    root.querySelector('#message')!.textContent = '';
+    root.querySelector('#message')!.textContent = session?.unavailable ? storageNotice : '';
     root.querySelector('.counter strong')!.textContent = String(progress());
     root.querySelector<HTMLElement>('.progress-track div')!.style.width = `${progress() / QUESTIONS.length * 100}%`;
   }));

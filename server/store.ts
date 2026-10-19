@@ -1,20 +1,20 @@
 import { DatabaseSync } from 'node:sqlite';
 import { createHash } from 'node:crypto';
 import { isSubmissionId } from '../src/submission-id.ts';
-import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, basename, join } from 'node:path';
+import { mkdirSync, existsSync, readFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { ASSESSMENT, QUESTIONS, calculateAllScores, isValidAnswer, type Answers } from '../src/index.ts';
-import { encodeResult } from '../src/result-link.ts';
-import type { Scores } from '../src/scoring.ts';
 import type { SavedResult } from '../src/result.ts';
 import { loadResultCipher } from './result-cipher.ts';
+import { initializeResults, scoreColumns, scoreValues } from './result-schema.ts';
+import { createDingtalkOutbox } from './dingtalk-outbox.ts';
 
 export class RequestError extends Error {
   status: number;
   constructor(message: string, status = 400) { super(message); this.status = status; }
 }
 
-export function createResultStore(filename: string, baseUrl = '') {
+export function createResultStore(filename: string, baseUrl = '', dingtalk?: { baseId: string; sheetId: string }) {
   if (baseUrl) {
     const url = new URL(baseUrl);
     if (!['http:', 'https:'].includes(url.protocol) || url.search || url.hash || url.username || url.password) {
@@ -29,67 +29,19 @@ export function createResultStore(filename: string, baseUrl = '') {
   const mappingFile = `${filename}.legacy-links.json`;
   const legacyLinks: Record<string, string> = filename !== ':memory:' && existsSync(mappingFile)
     ? JSON.parse(readFileSync(mappingFile, 'utf8')) : {};
-  const schema = `CREATE TABLE IF NOT EXISTS results (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    result_json TEXT NOT NULL,
-    result_link TEXT NOT NULL,
-    created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
-  )`;
-  const columns = db.prepare('PRAGMA table_info(results)').all();
-  const hasSequence = columns.some(column => column.name === 'id' && column.type === 'INTEGER' && column.pk === 1);
-  if (columns.length && !hasSequence) {
-    if (filename !== ':memory:') {
-      const backupDirectory = join(dirname(filename), 'backups');
-      mkdirSync(backupDirectory, { recursive: true });
-      const backupFile = join(backupDirectory, `${basename(filename)}.before-sequence-id-${Date.now()}.sqlite`);
-      db.exec(`VACUUM INTO '${backupFile.replaceAll("'", "''")}'`);
-    }
-    const rows = db.prepare('SELECT * FROM results ORDER BY created_at, rowid').all();
-    const migrated = rows.map(row => {
-      const value = row.result_json ? JSON.parse(String(row.result_json)) : {
-        assessmentId: String(row.assessment_id || 'ipip-50-v1'),
-        scores: JSON.parse(String(row.scores_json)) as Scores,
-      };
-      if (!row.result_json) legacyLinks[String(row.id)] = encodeResult(value.scores, value.assessmentId);
-      return {
-        json: row.result_json ? String(row.result_json) : JSON.stringify(value),
-        link: row.result_link ? String(row.result_link) : cipher.encrypt(value.scores, value.assessmentId, base).shareUrl,
-        created: String(row.created_at),
-        updated: String(row.updated_at ?? row.created_at),
-      };
-    });
-    // Compatibility mappings contain only old IDs and result tokens.
-    if (filename !== ':memory:' && columns.some(column => column.name === 'scores_json')) writeFileSync(mappingFile, JSON.stringify(legacyLinks));
-    db.exec('BEGIN IMMEDIATE');
-    try {
-      db.exec('ALTER TABLE results RENAME TO results_before_sequence');
-      db.exec(schema);
-      const insert = db.prepare('INSERT INTO results (result_json, result_link, created_at, updated_at) VALUES (?, ?, ?, ?)');
-      for (const row of migrated) insert.run(row.json, row.link, row.created, row.updated);
-      db.exec('DROP TABLE results_before_sequence; COMMIT');
-    } catch (error) { db.exec('ROLLBACK'); db.close(); throw error; }
-  }
-  db.exec(schema);
-  // Technical receipts are separate from the five-field submission record.
+  try { initializeResults(db, filename, cipher, base, legacyLinks, mappingFile); }
+  catch (error) { db.close(); throw error; }
+  // Technical receipts are separate from the five domain scores and submission metadata.
   db.exec(`CREATE TABLE IF NOT EXISTS submission_receipts (
     request_id TEXT PRIMARY KEY,
     request_fingerprint TEXT NOT NULL,
     result_id INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE
   ) WITHOUT ROWID;
   CREATE INDEX IF NOT EXISTS submission_receipts_result_idx ON submission_receipts(result_id);`);
-  // Upgrade stored links by record ID without combining submissions or changing timestamps.
-  const updateLink = db.prepare('UPDATE results SET result_link = ? WHERE id = ?');
-  for (const row of db.prepare('SELECT id, result_json, result_link FROM results').all()) {
-    if (String(row.result_link).includes('/results/view#e1_')) continue;
-    const value = JSON.parse(String(row.result_json));
-    updateLink.run(cipher.encrypt(value.scores, value.assessmentId, base).shareUrl, row.id as number);
-  }
-
-
-
+  const outbox = createDingtalkOutbox(db);
   return {
-    create(payload: unknown): SavedResult {
+    outbox,
+    create(payload: unknown, shareOrigin?: string): SavedResult {
       if (!payload || typeof payload !== 'object') throw new RequestError('提交内容格式不正确。');
       const { answers, submissionId, assessmentId } = payload as Record<string, unknown>;
       if (assessmentId !== undefined && assessmentId !== ASSESSMENT.id) throw new RequestError('题库版本已更新，请刷新后重新作答。', 409);
@@ -122,13 +74,17 @@ export function createResultStore(filename: string, baseUrl = '') {
           return result;
         }
         const scores = calculateAllScores(normalized);
-        const resultJson = JSON.stringify({ assessmentId: ASSESSMENT.id, scores });
         const now = new Date().toISOString();
         const result = cipher.encrypt(scores, ASSESSMENT.id, base);
-        const inserted = db.prepare('INSERT INTO results (result_json, created_at, updated_at, result_link) VALUES (?, ?, ?, ?)')
-          .run(resultJson, now, now, result.shareUrl);
+        const inserted = db.prepare(`INSERT INTO results (${scoreColumns.join(', ')}, result_link, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+          .run(...scoreValues(scores), result.shareUrl, now, now);
         db.prepare('INSERT INTO submission_receipts (request_id, request_fingerprint, result_id) VALUES (?, ?, ?)')
           .run(requestId, fingerprint, inserted.lastInsertRowid);
+        if (dingtalk) {
+          const shareUrl = new URL(result.shareUrl, base || shareOrigin).href;
+          if (!/^https?:\/\//.test(shareUrl)) throw new RequestError('结果分享地址不正确。');
+          outbox.enqueue(inserted.lastInsertRowid, requestId, dingtalk.baseId, dingtalk.sheetId, shareUrl);
+        }
         db.exec('COMMIT');
         return result;
       } catch (error) {

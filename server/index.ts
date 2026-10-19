@@ -2,11 +2,19 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { readFile } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 import { createResultStore, RequestError } from './store.ts';
+import { createDingtalkClient, dingtalkSettings } from './dingtalk.ts';
+import { createDingtalkSynchronizer } from './dingtalk-outbox.ts';
 
 const dev = process.argv.includes('--dev');
 const port = Number(process.env.PORT || 5173);
 const host = process.env.HOST || '127.0.0.1';
-const store = createResultStore(resolve(process.env.DATABASE_PATH || './data/bigfive.sqlite'), process.env.BASE_URL || '');
+const dingtalk = dingtalkSettings(process.env);
+const store = createResultStore(resolve(process.env.DATABASE_PATH || './data/bigfive.sqlite'), process.env.BASE_URL || '', dingtalk);
+const synchronizer = dingtalk?.operatorId ? createDingtalkSynchronizer(store.outbox, createDingtalkClient(dingtalk, {
+  apiOrigin: process.env.NODE_ENV === 'test' ? process.env.DINGTALK_TEST_API_ORIGIN : undefined,
+})) : undefined;
+if (dingtalk && !synchronizer) console.warn('钉钉同步等待配置操作人 unionId；新提交先进入持久队列。');
+synchronizer?.wake();
 const vite = dev ? await (await import('vite')).createServer({ server: { middlewareMode: true }, appType: 'spa' }) : undefined;
 const dist = resolve('dist');
 const mime: Record<string, string> = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon', '.webp': 'image/webp', '.woff2': 'font/woff2', '.json': 'application/json; charset=utf-8' };
@@ -26,7 +34,7 @@ async function body(req: IncomingMessage): Promise<unknown> {
   try { return JSON.parse(text); } catch { throw new RequestError('提交内容不是有效的 JSON。'); }
 }
 
-const server = createServer(async (req, res) => {
+async function handleRequest(req: IncomingMessage, res: ServerResponse) {
   try {
     const requestUrl = new URL(req.url || '/', 'http://localhost');
     const pathname = requestUrl.pathname;
@@ -47,7 +55,10 @@ const server = createServer(async (req, res) => {
     }
     if (pathname === '/api/results' && req.method === 'POST') {
       if (!req.headers['content-type']?.includes('application/json')) throw new RequestError('请使用 JSON 格式提交。', 415);
-      json(res, 201, store.create(await body(req)));
+      const origin = req.headers.origin || `http://${req.headers.host || 'localhost'}`;
+      const result = store.create(await body(req), origin);
+      json(res, 201, result);
+      synchronizer?.wake();
       return;
     }
     const match = /^\/api\/results\/([a-f0-9]{32}|[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/i.exec(pathname);
@@ -72,18 +83,52 @@ const server = createServer(async (req, res) => {
       res.end(req.method === 'HEAD' ? undefined : content);
     } catch { res.writeHead(404); res.end('Not found'); }
   } catch (error) {
+    if ((req.destroyed && !req.complete) || res.destroyed) return;
     if (!(error instanceof RequestError)) console.error(error);
     json(res, error instanceof RequestError ? error.status : 500, { error: error instanceof RequestError ? error.message : '保存或读取结果失败，请稍后重试。' });
   }
+}
+let stopping = false;
+const inFlight = new Set<Promise<void>>();
+const responses = new Set<ServerResponse>();
+const server = createServer((req, res) => {
+  if (stopping) {
+    res.writeHead(503, { Connection: 'close', 'Retry-After': '1' });
+    res.end();
+    return;
+  }
+  responses.add(res);
+  res.once('close', () => { responses.delete(res); });
+  const task = handleRequest(req, res);
+  inFlight.add(task);
+  void task.finally(() => { inFlight.delete(task); });
 });
 server.listen(port, host, () => {
   const address = server.address();
   console.log(`Big Five: http://${host}:${typeof address === 'object' && address ? address.port : port}/`);
 });
 async function stop() {
-  server.close();
-  await vite?.close();
-  store.close();
+  if (stopping) return;
+  stopping = true;
+  for (const res of responses) {
+    res.shouldKeepAlive = false;
+    if (!res.headersSent) res.setHeader('Connection', 'close');
+  }
+  const configured = Number(process.env.SHUTDOWN_TIMEOUT_MS || 15000);
+  const timeoutMs = Number.isFinite(configured) && configured > 0 ? configured : 15000;
+  const timeout = setTimeout(() => {
+    console.warn('关停等待超时，正在关闭未完成的连接；未收到结果的提交可使用原编号重试。');
+    server.closeAllConnections();
+  }, timeoutMs);
+  try {
+    await Promise.all([
+      new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())),
+      synchronizer?.stop(),
+    ]);
+    await Promise.allSettled([...inFlight]);
+    await vite?.close();
+    store.close();
+  } finally { clearTimeout(timeout); }
   process.exit(0);
 }
 process.once('SIGINT', stop);

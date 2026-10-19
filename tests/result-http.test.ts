@@ -38,6 +38,14 @@ test('HTTP result decoding supports body-free GET and POST without adding databa
     assert.equal(head.status, 308);
     assert.equal(head.headers.get('location'), '/assessment?start=1');
     assert.equal(await head.text(), '');
+    const audit = new DatabaseSync(filename);
+    const snapshot = () => ({
+      results: audit.prepare('SELECT * FROM results ORDER BY id').all(),
+      receipts: audit.prepare('SELECT * FROM submission_receipts ORDER BY request_id').all(),
+    });
+    try {
+    for (const path of ['/', '/assessment', '/api/results', '/api/results/decode?token=invalid']) await fetch(base + path);
+    assert.deepEqual(snapshot(), { results: [], receipts: [] });
     const payload = { submissionId: randomUUID(), answers: Object.fromEntries(QUESTIONS.map(q => [q.id, 3])) };
     const submit = () => fetch(`${base}/api/results`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
@@ -45,6 +53,16 @@ test('HTTP result decoding supports body-free GET and POST without adding databa
     const created = await submit();
     assert.equal(created.status, 201);
     const result = await created.json();
+    const original = snapshot();
+    // Fail the request if browsing, decoding or a retry attempts any business write,
+    // even an UPDATE that would assign exactly the same values.
+    for (const table of ['results', 'submission_receipts']) {
+      for (const operation of ['INSERT', 'UPDATE', 'DELETE']) {
+        audit.exec(`CREATE TRIGGER forbid_${table}_${operation} BEFORE ${operation} ON ${table}
+          BEGIN SELECT RAISE(ABORT, 'non-submission write'); END`);
+      }
+    }
+    for (const path of ['/', '/assessment', result.relativePath, '/api/results/00000000000000000000000000000000']) await fetch(base + path);
     // Simulate a client missing the first successful response and retrying concurrently.
     const retries = await Promise.all(Array.from({ length: 8 }, submit));
     for (const retry of retries) {
@@ -65,9 +83,9 @@ test('HTTP result decoding supports body-free GET and POST without adding databa
     const invalid = await fetch(`${base}/api/results/decode?token=e1_invalid`);
     assert.equal(invalid.status, 400);
     assert.equal(typeof (await invalid.json()).error, 'string');
-    const db = new DatabaseSync(filename, { readOnly: true });
-    try { assert.equal(db.prepare('SELECT COUNT(*) AS count FROM results').get()!.count, 1); }
-    finally { db.close(); }
+    assert.deepEqual(snapshot(), original);
+    assert.equal(original.results.length, 1);
+    } finally { audit.close(); }
   } finally {
     child.kill('SIGTERM');
     await exited;

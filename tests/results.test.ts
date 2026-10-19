@@ -1,3 +1,4 @@
+import { loadResultCipher } from '../server/result-cipher.ts';
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { mkdtempSync, rmSync, readdirSync } from 'node:fs';
@@ -38,19 +39,19 @@ test('database records identical submissions separately with autoincrement IDs',
     const second = store.create({ submissionId: randomUUID(), answers });
     const db = new DatabaseSync(filename);
     try {
-      assert.deepEqual(db.prepare('PRAGMA table_info(results)').all().map(c => c.name), ['id', 'result_json', 'result_link', 'created_at', 'updated_at']);
+      assert.deepEqual(db.prepare('PRAGMA table_info(results)').all().map(c => c.name), ['id', 'openness', 'conscientiousness', 'extraversion', 'agreeableness', 'neuroticism', 'result_link', 'created_at', 'updated_at']);
       const rows = db.prepare('SELECT * FROM results ORDER BY id').all();
       assert.equal(rows.length, 2);
       assert.deepEqual(rows.map(row => row.id), [1, 2]);
       assert.equal(rows[0]!.result_link, result.shareUrl);
       assert.equal(rows[1]!.result_link, second.shareUrl);
-      assert.equal(rows[1]!.result_json, rows[0]!.result_json);
+      for (const column of ['openness', 'conscientiousness', 'extraversion', 'agreeableness', 'neuroticism']) assert.equal(rows[1]![column], rows[0]![column]);
       assert.equal(rows[0]!.created_at, rows[0]!.updated_at);
       assert.equal(rows[1]!.created_at, rows[1]!.updated_at);
       db.prepare('DELETE FROM results WHERE id = ?').run(2);
       store.create({ submissionId: randomUUID(), answers });
       assert.deepEqual(db.prepare('SELECT id FROM results ORDER BY id').all().map(row => row.id), [1, 3]);
-      assert.deepEqual(JSON.parse(String(rows[0]!.result_json)), { assessmentId: ASSESSMENT.id, scores: result.scores });
+      assert.deepEqual(['openness', 'conscientiousness', 'extraversion', 'agreeableness', 'neuroticism'].map(column => rows[0]![column]), [50, 50, 50, 50, 50]);
       assert.ok(String(rows[0]!.updated_at) >= String(rows[0]!.created_at));
       assert.ok(Math.abs(Date.now() - Date.parse(String(rows[0]!.created_at))) < 5000);
     } finally { db.close(); }
@@ -102,14 +103,15 @@ test('migrates the previous result-keyed table without losing data, links or tim
   const directory = mkdtempSync(join(tmpdir(), 'bigfive-sequence-'));
   const filename = join(directory, 'test.sqlite');
   const json = JSON.stringify({ assessmentId: ASSESSMENT.id, scores: calculateAllScores(answers) });
-  const link = '/results/view#e1_preserve-existing-link';
+  // An existing encrypted deployment also has its original persistent key.
+  const link = loadResultCipher(filename).encrypt(calculateAllScores(answers), ASSESSMENT.id).shareUrl;
   const before = new DatabaseSync(filename);
   before.exec('CREATE TABLE results (result_json TEXT PRIMARY KEY, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, result_link TEXT NOT NULL)');
   before.prepare('INSERT INTO results VALUES (?, ?, ?, ?)').run(json, '2026-10-15T00:00:00.000Z', '2026-10-16T00:00:00.000Z', link);
   before.close();
   let store = createResultStore(filename);
   try {
-    const backupFiles = readdirSync(join(directory, 'backups'));
+    const backupFiles = readdirSync(join(directory, 'backups')).filter(name => name.endsWith('.sqlite'));
     assert.equal(backupFiles.length, 1);
     const backup = new DatabaseSync(join(directory, 'backups', backupFiles[0]!), { readOnly: true });
     try {
@@ -127,8 +129,8 @@ test('migrates the previous result-keyed table without losing data, links or tim
     try {
       const rows = db.prepare('SELECT * FROM results ORDER BY id').all();
       assert.deepEqual(rows.map(row => row.id), [1, 2, 3]);
-      assert.ok(rows.every(row => row.result_json === json));
-      assert.deepEqual(rows[0], Object.assign(Object.create(null), { id: 1, result_json: json, result_link: link, created_at: '2026-10-15T00:00:00.000Z', updated_at: '2026-10-16T00:00:00.000Z' }));
+      assert.ok(rows.every(row => row.openness === 50 && row.neuroticism === 50 && !('result_json' in row)));
+      assert.deepEqual(rows[0], Object.assign(Object.create(null), { id: 1, openness: 50, conscientiousness: 50, extraversion: 50, agreeableness: 50, neuroticism: 50, result_link: link, created_at: '2026-10-15T00:00:00.000Z', updated_at: '2026-10-16T00:00:00.000Z' }));
       assert.match(String(db.prepare("SELECT sql FROM sqlite_master WHERE name = 'results'").get()!.sql), /AUTOINCREMENT/);
     } finally { db.close(); }
   } finally { store.close(); rmSync(directory, { recursive: true, force: true }); }
@@ -195,4 +197,34 @@ test('receipt write failure rolls back the result row and permits a clean retry'
     assert.deepEqual(store.create(payload), result);
     assert.equal(db.prepare('SELECT count(*) AS count FROM results').get()!.count, 1);
   } finally { db.close(); store.close(); rmSync(directory, { recursive: true, force: true }); }
+});
+
+
+test('decoding an encrypted link works after closing SQLite entirely', () => {
+  const store = createResultStore(':memory:');
+  const result = store.create({ submissionId: randomUUID(), answers });
+  store.close();
+  assert.deepEqual(store.decode(result.id), result);
+});
+
+test('normal startup preserves historical plaintext links without updating any submission rows', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'bigfive-readonly-start-'));
+  const filename = join(directory, 'test.sqlite');
+  try {
+    const store = createResultStore(filename);
+    const result = store.create({ submissionId: randomUUID(), answers });
+    store.close();
+    const db = new DatabaseSync(filename);
+    const legacy = encodeResult(result.scores, result.assessmentId);
+    db.prepare('UPDATE results SET result_link = ?').run(`/results/view#${legacy}`);
+    const snapshot = db.prepare('SELECT * FROM results').all();
+    db.exec("CREATE TRIGGER forbid_startup_update BEFORE UPDATE ON results BEGIN SELECT RAISE(ABORT, 'startup must not update results'); END");
+    db.close();
+    const reopened = createResultStore(filename);
+    try { assert.deepEqual(reopened.decode(legacy).scores, result.scores); }
+    finally { reopened.close(); }
+    const reader = new DatabaseSync(filename, { readOnly: true });
+    try { assert.deepEqual(reader.prepare('SELECT * FROM results').all(), snapshot); }
+    finally { reader.close(); }
+  } finally { rmSync(directory, { recursive: true, force: true }); }
 });
