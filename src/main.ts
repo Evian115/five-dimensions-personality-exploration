@@ -1,6 +1,7 @@
 import { ASSESSMENT, QUESTIONS, isTestComplete, type Answers } from './index.ts';
 import './style.css';
 import { createSubmissionId } from './submission-id.ts';
+import { restoreDraft, saveDraft, completeDraft, draftPage } from './assessment-draft.ts';
 import { CURRENT_ASSESSMENT_ID, assessmentName, assessmentCount } from './assessment-versions.ts';
 import type { SavedResult } from './result.ts';
 
@@ -14,43 +15,26 @@ const domains = [
 ] as const;
 
 const app = document.querySelector<HTMLDivElement>('#app')!;
-const storageKey = `bigfive-answers:${ASSESSMENT.id}`;
 const entryUrl = new URL(window.location.href);
-if (/^\/assessment\/?$/.test(entryUrl.pathname) && entryUrl.searchParams.get('start') === '1') {
-  localStorage.removeItem(storageKey);
+const startNew = /^\/assessment\/?$/.test(entryUrl.pathname) && entryUrl.searchParams.get('start') === '1';
+const draft = restoreDraft(localStorage, startNew);
+if (startNew) {
   entryUrl.searchParams.delete('start');
   history.replaceState(null, '', entryUrl.pathname + entryUrl.search + entryUrl.hash);
 }
-const stored = localStorage.getItem(storageKey);
-let answers: Answers = {};
-try {
-  const parsed = stored ? JSON.parse(stored) as Record<string, unknown> : {};
-  for (const q of QUESTIONS) {
-    const value = parsed[q.id];
-    if (typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 5) {
-      answers[q.id] = value as 1 | 2 | 3 | 4 | 5;
-    }
-  }
-} catch { /* Ignore old or malformed local data. */ }
-
-// Completed drafts from earlier sessions must not prefill a new assessment.
-if (isTestComplete(answers)) {
-  answers = {};
-  localStorage.removeItem(storageKey);
-}
-
-let page = Math.max(0, QUESTIONS.findIndex(q => answers[q.id] === undefined));
+let answers: Answers = draft.answers;
+let submissionId = draft.submissionId;
+let page = draftPage(answers);
 let showingResult = false;
 let savedResult: SavedResult | null = null;
 let loadingResult = false;
 let resultError = '';
 let submitting = false;
-let submissionId = createSubmissionId();
 let routeVersion = 0;
 let transitioning = false;
 const pageCount = QUESTIONS.length;
 
-function save() { localStorage.setItem(storageKey, JSON.stringify(answers)); }
+function save() { saveDraft(localStorage, { answers, submissionId }); }
 function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
 }
@@ -184,24 +168,37 @@ async function submitResult() {
   document.querySelectorAll<HTMLInputElement>('input[type="radio"]').forEach(input => { input.disabled = true; });
   next.textContent = '正在保存…';
   document.querySelector('#message')!.textContent = '';
+  const submittedId = submissionId;
+  let result: SavedResult;
   try {
-    const result = await readJson(await fetch('/api/results', {
+    // Persist the request identity before sending, including for restored complete drafts.
+    save();
+    result = await readJson(await fetch('/api/results', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ submissionId, answers, assessmentId: ASSESSMENT.id }),
+      body: JSON.stringify({ submissionId: submittedId, answers, assessmentId: ASSESSMENT.id }),
     }));
-    savedResult = result;
-    localStorage.removeItem(storageKey);
-    answers = {};
-    page = 0;
-    submissionId = createSubmissionId();
-    history.pushState(null, '', result.relativePath);
-    await navigate(() => { showingResult = true; }, 1);
   } catch (error) {
     document.querySelector('#message')!.textContent = error instanceof Error ? error.message : '保存失败，请重试。';
-    next.disabled = previous.disabled = false;
+    next.disabled = false;
+    previous.disabled = page === 0;
     if (skip) skip.disabled = false;
     document.querySelectorAll<HTMLInputElement>('input[type="radio"]').forEach(input => { input.disabled = false; });
     next.textContent = '重新提交 →';
+    submitting = false;
+    return;
+  }
+  savedResult = result;
+  completeDraft(localStorage, submittedId);
+  answers = {};
+  page = 0;
+  submissionId = createSubmissionId();
+  history.pushState(null, '', result.relativePath);
+  try {
+    await navigate(() => { showingResult = true; }, 1);
+  } catch {
+    // A display/animation failure after a successful write must not offer another submission.
+    showingResult = true;
+    render();
   } finally { submitting = false; }
 }
 

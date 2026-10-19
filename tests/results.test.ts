@@ -133,3 +133,66 @@ test('migrates the previous result-keyed table without losing data, links or tim
     } finally { db.close(); }
   } finally { store.close(); rmSync(directory, { recursive: true, force: true }); }
 });
+
+test('same submission retried after a lost response or restart returns the original link without changing records', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'bigfive-retry-'));
+  const filename = join(directory, 'test.sqlite');
+  let store = createResultStore(filename);
+  const payload = { submissionId: randomUUID(), answers, assessmentId: ASSESSMENT.id };
+  try {
+    const first = store.create(payload);
+    const reader = new DatabaseSync(filename, { readOnly: true });
+    let original;
+    try { original = reader.prepare('SELECT * FROM results').get(); }
+    finally { reader.close(); }
+    assert.deepEqual(store.create(payload), first);
+    // A case-only UUID change still identifies the same request.
+    assert.deepEqual(store.create({ ...payload, submissionId: payload.submissionId.toUpperCase() }), first);
+    store.close();
+    store = createResultStore(filename);
+    assert.deepEqual(store.create(payload), first);
+    const db = new DatabaseSync(filename, { readOnly: true });
+    try {
+      assert.deepEqual(db.prepare('SELECT * FROM results').all(), [original]);
+      assert.equal(db.prepare('SELECT count(*) AS count FROM submission_receipts').get()!.count, 1);
+    } finally { db.close(); }
+    // A genuinely separate assessment with identical scores must still create a new row.
+    store.create({ ...payload, submissionId: randomUUID() });
+    const after = new DatabaseSync(filename, { readOnly: true });
+    try { assert.equal(after.prepare('SELECT count(*) AS count FROM results').get()!.count, 2); }
+    finally { after.close(); }
+  } finally { store.close(); rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('different answers cannot reuse the same submission ID, even when their scores match', () => {
+  const store = createResultStore(':memory:');
+  try {
+    const payload = { submissionId: randomUUID(), answers };
+    const first = store.create(payload);
+    const pair = QUESTIONS.filter(q => q.domain === 'O' && q.facet === 1);
+    assert.equal(pair.length, 2);
+    assert.equal(pair[0]!.keyed, pair[1]!.keyed);
+    const changed = { ...answers, [pair[0]!.id]: 2, [pair[1]!.id]: 4 } as Answers;
+    assert.deepEqual(calculateAllScores(changed), calculateAllScores(answers));
+    assert.throws(() => store.create({ ...payload, answers: changed }), error => (error as {status?: number}).status === 409);
+    assert.deepEqual(store.create(payload), first);
+  } finally { store.close(); }
+});
+
+test('receipt write failure rolls back the result row and permits a clean retry', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'bigfive-atomic-'));
+  const filename = join(directory, 'test.sqlite');
+  const store = createResultStore(filename);
+  const db = new DatabaseSync(filename);
+  try {
+    db.exec("CREATE TRIGGER fail_receipt BEFORE INSERT ON submission_receipts BEGIN SELECT RAISE(ABORT, 'test failure'); END");
+    const payload = { submissionId: randomUUID(), answers };
+    assert.throws(() => store.create(payload));
+    assert.equal(db.prepare('SELECT count(*) AS count FROM results').get()!.count, 0);
+    assert.equal(db.prepare('SELECT count(*) AS count FROM submission_receipts').get()!.count, 0);
+    db.exec('DROP TRIGGER fail_receipt');
+    const result = store.create(payload);
+    assert.deepEqual(store.create(payload), result);
+    assert.equal(db.prepare('SELECT count(*) AS count FROM results').get()!.count, 1);
+  } finally { db.close(); store.close(); rmSync(directory, { recursive: true, force: true }); }
+});

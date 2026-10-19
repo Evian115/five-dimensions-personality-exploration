@@ -38,12 +38,19 @@ test('HTTP result decoding supports body-free GET and POST without adding databa
     assert.equal(head.status, 308);
     assert.equal(head.headers.get('location'), '/assessment?start=1');
     assert.equal(await head.text(), '');
-    const created = await fetch(`${base}/api/results`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ submissionId: randomUUID(), answers: Object.fromEntries(QUESTIONS.map(q => [q.id, 3])) }),
+    const payload = { submissionId: randomUUID(), answers: Object.fromEntries(QUESTIONS.map(q => [q.id, 3])) };
+    const submit = () => fetch(`${base}/api/results`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
     });
+    const created = await submit();
     assert.equal(created.status, 201);
     const result = await created.json();
+    // Simulate a client missing the first successful response and retrying concurrently.
+    const retries = await Promise.all(Array.from({ length: 8 }, submit));
+    for (const retry of retries) {
+      assert.equal(retry.status, 201);
+      assert.deepEqual(await retry.json(), result);
+    }
     const response = await fetch(`${base}/api/results/decode?token=${encodeURIComponent(result.id)}`);
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('transfer-encoding'), null);

@@ -1,4 +1,6 @@
 import { DatabaseSync } from 'node:sqlite';
+import { createHash } from 'node:crypto';
+import { isSubmissionId } from '../src/submission-id.ts';
 import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, basename, join } from 'node:path';
 import { ASSESSMENT, QUESTIONS, calculateAllScores, isValidAnswer, type Answers } from '../src/index.ts';
@@ -23,7 +25,7 @@ export function createResultStore(filename: string, baseUrl = '') {
   if (filename !== ':memory:') mkdirSync(dirname(filename), { recursive: true });
   const cipher = loadResultCipher(filename);
   const db = new DatabaseSync(filename);
-  db.exec('PRAGMA journal_mode = WAL');
+  db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000');
   const mappingFile = `${filename}.legacy-links.json`;
   const legacyLinks: Record<string, string> = filename !== ':memory:' && existsSync(mappingFile)
     ? JSON.parse(readFileSync(mappingFile, 'utf8')) : {};
@@ -69,6 +71,13 @@ export function createResultStore(filename: string, baseUrl = '') {
     } catch (error) { db.exec('ROLLBACK'); db.close(); throw error; }
   }
   db.exec(schema);
+  // Technical receipts are separate from the five-field submission record.
+  db.exec(`CREATE TABLE IF NOT EXISTS submission_receipts (
+    request_id TEXT PRIMARY KEY,
+    request_fingerprint TEXT NOT NULL,
+    result_id INTEGER NOT NULL REFERENCES results(id) ON DELETE CASCADE
+  ) WITHOUT ROWID;
+  CREATE INDEX IF NOT EXISTS submission_receipts_result_idx ON submission_receipts(result_id);`);
   // Upgrade stored links by record ID without combining submissions or changing timestamps.
   const updateLink = db.prepare('UPDATE results SET result_link = ? WHERE id = ?');
   for (const row of db.prepare('SELECT id, result_json, result_link FROM results').all()) {
@@ -84,7 +93,7 @@ export function createResultStore(filename: string, baseUrl = '') {
       if (!payload || typeof payload !== 'object') throw new RequestError('提交内容格式不正确。');
       const { answers, submissionId, assessmentId } = payload as Record<string, unknown>;
       if (assessmentId !== undefined && assessmentId !== ASSESSMENT.id) throw new RequestError('题库版本已更新，请刷新后重新作答。', 409);
-      if (typeof submissionId !== 'string' || !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(submissionId)) {
+      if (!isSubmissionId(submissionId)) {
         throw new RequestError('提交编号不正确。');
       }
       if (!answers || typeof answers !== 'object' || Array.isArray(answers) || Object.keys(answers).length !== QUESTIONS.length) {
@@ -96,13 +105,36 @@ export function createResultStore(filename: string, baseUrl = '') {
         if (!isValidAnswer(value)) throw new RequestError(`第 ${q.id} 题的答案不正确。`);
         normalized[q.id] = value;
       }
-      const scores = calculateAllScores(normalized);
-      const resultJson = JSON.stringify({ assessmentId: ASSESSMENT.id, scores });
-      const now = new Date().toISOString();
-      const result = cipher.encrypt(scores, ASSESSMENT.id, base);
-      db.prepare('INSERT INTO results (result_json, created_at, updated_at, result_link) VALUES (?, ?, ?, ?)')
-        .run(resultJson, now, now, result.shareUrl);
-      return result;
+      const requestId = submissionId.toLowerCase();
+      const fingerprint = createHash('sha256').update(JSON.stringify({ assessmentId: ASSESSMENT.id, answers: normalized })).digest('hex');
+      // Serialize the lookup and both writes across connections; never deduplicate by score.
+      db.exec('BEGIN IMMEDIATE');
+      try {
+        const receipt = db.prepare('SELECT request_fingerprint, result_id FROM submission_receipts WHERE request_id = ?').get(requestId);
+        if (receipt) {
+          if (receipt.request_fingerprint !== fingerprint) throw new RequestError('该提交编号已用于其他答案，请重新开始测评。', 409);
+          const row = db.prepare('SELECT result_link FROM results WHERE id = ?').get(receipt.result_id as number);
+          if (!row) throw new RequestError('该提交记录已被清除，请重新开始测评。', 410);
+          const link = String(row.result_link);
+          const token = new URL(link, 'http://localhost').hash.slice(1);
+          const result = { ...cipher.decrypt(token, base), shareUrl: link };
+          db.exec('COMMIT');
+          return result;
+        }
+        const scores = calculateAllScores(normalized);
+        const resultJson = JSON.stringify({ assessmentId: ASSESSMENT.id, scores });
+        const now = new Date().toISOString();
+        const result = cipher.encrypt(scores, ASSESSMENT.id, base);
+        const inserted = db.prepare('INSERT INTO results (result_json, created_at, updated_at, result_link) VALUES (?, ?, ?, ?)')
+          .run(resultJson, now, now, result.shareUrl);
+        db.prepare('INSERT INTO submission_receipts (request_id, request_fingerprint, result_id) VALUES (?, ?, ?)')
+          .run(requestId, fingerprint, inserted.lastInsertRowid);
+        db.exec('COMMIT');
+        return result;
+      } catch (error) {
+        db.exec('ROLLBACK');
+        throw error;
+      }
     },
     get(id: string): SavedResult | undefined {
       if (!Object.hasOwn(legacyLinks, id)) return undefined;
