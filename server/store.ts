@@ -11,10 +11,11 @@ import { createDingtalkOutbox } from './dingtalk-outbox.ts';
 
 export class RequestError extends Error {
   status: number;
-  constructor(message: string, status = 400) { super(message); this.status = status; }
+  retryAfter?: number;
+  constructor(message: string, status = 400, retryAfter?: number) { super(message); this.status = status; this.retryAfter = retryAfter; }
 }
 
-export function createResultStore(filename: string, baseUrl = '', dingtalk?: { baseId: string; sheetId: string }) {
+export function createResultStore(filename: string, baseUrl = '', dingtalk?: { baseId: string; sheetId: string; maxPending?: number }) {
   if (baseUrl) {
     const url = new URL(baseUrl);
     if (!['http:', 'https:'].includes(url.protocol) || url.search || url.hash || url.username || url.password) {
@@ -41,7 +42,7 @@ export function createResultStore(filename: string, baseUrl = '', dingtalk?: { b
   const outbox = createDingtalkOutbox(db);
   return {
     outbox,
-    create(payload: unknown, shareOrigin?: string): SavedResult {
+    create(payload: unknown, shareOrigin?: string, beforeInsert?: () => void): SavedResult {
       if (!payload || typeof payload !== 'object') throw new RequestError('提交内容格式不正确。');
       const { answers, submissionId, assessmentId } = payload as Record<string, unknown>;
       if (assessmentId !== undefined && assessmentId !== ASSESSMENT.id) throw new RequestError('题库版本已更新，请刷新后重新作答。', 409);
@@ -73,6 +74,10 @@ export function createResultStore(filename: string, baseUrl = '', dingtalk?: { b
           db.exec('COMMIT');
           return result;
         }
+        if (dingtalk && db.prepare('SELECT 1 FROM dingtalk_outbox WHERE synced_at IS NULL LIMIT 1 OFFSET ?').get((dingtalk.maxPending ?? 500) - 1)) {
+          throw new RequestError('同步任务较多，请稍后重新提交，答案会保留。', 503, 30);
+        }
+        beforeInsert?.();
         const scores = calculateAllScores(normalized);
         const now = new Date().toISOString();
         const result = cipher.encrypt(scores, ASSESSMENT.id, base);

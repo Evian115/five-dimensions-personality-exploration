@@ -13,7 +13,7 @@ const filename=join(directory,'test.sqlite');
 const processes=[];const report={};
 const payload=()=>({submissionId:randomUUID(),answers:Object.fromEntries(Array.from({length:60},(_,i)=>[i+1,3]))});
 async function start(){
- const child=spawn(process.execPath,['--experimental-strip-types','server/index.ts'],{env:{...process.env,HOST:'127.0.0.1',PORT:'0',DATABASE_PATH:filename,BASE_URL:''},stdio:['ignore','pipe','pipe']});
+ const child=spawn(process.execPath,['--experimental-strip-types','server/index.ts'],{env:{...process.env,HOST:'127.0.0.1',PORT:'0',DATABASE_PATH:filename,BASE_URL:'',APP_SUBMISSIONS_PER_IP_MINUTE:'1000',APP_SUBMISSIONS_PER_MINUTE:'1000',APP_API_REQUESTS_PER_MINUTE:'1000',APP_REQUESTS_PER_SECOND:'1000'},stdio:['ignore','pipe','pipe']});
  const exited=once(child,'exit');const item={child,exited,base:''};processes.push(item);
  item.base=await new Promise((resolve,reject)=>{let output='';const timer=setTimeout(()=>reject(new Error('startup timeout')),10000);child.stdout.on('data',chunk=>{output+=chunk;const m=output.match(/http:\/\/127\.0\.0\.1:\d+/);if(m){clearTimeout(timer);resolve(m[0]);}});child.once('exit',()=>{clearTimeout(timer);reject(new Error('early exit'));});});
  return item;
